@@ -1,4 +1,4 @@
-### Server example
+### RUN-LENGTH-EXAMPLE
 
 Basic HTTP server that exposes a collection of sequences.
 

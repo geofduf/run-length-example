@@ -117,7 +117,7 @@ function eventHandlerQuery() {
       refresh(content);
     })
     .catch(function(error) {
-      content["content-request"].innerText = error;
+      content["content-request"] = error;
       refresh(content);
     });
 }

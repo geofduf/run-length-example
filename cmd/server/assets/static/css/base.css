@@ -1,0 +1,60 @@
+body {
+  font-family: monospace;
+  font-size: 11px;
+}
+tr {
+  text-align: center;
+}
+td {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+input {
+  width: 80px;
+}
+.header {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  gap: 30px;
+  padding-bottom: 10px;
+}
+.header-control {
+  display: flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
+.block {
+  padding-top: 10px;
+}
+.content-indent {
+  padding-left: 20px;
+}
+.title {
+  font-weight: bold;
+}
+.button {
+  border-radius: 3px;
+  padding-left: 8px;
+  padding-right: 8px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 10px;
+  cursor: pointer;
+}
+.button-green {
+  background-color: #55b16a;
+  color: #ffffff;
+}
+.button-red {
+  background-color: #d9505e;
+  color: #ffffff;
+}
+.button-blue {
+  background-color: #3d88cf;
+  color: #ffffff;
+}

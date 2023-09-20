@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"embed"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -35,6 +37,9 @@ var (
 	validStatement = regexp.MustCompile(`^(\w+) ([012])(?: (\d+))?$`)
 )
 
+//go:embed assets
+var assets embed.FS
+
 type server struct {
 	store *sequence.Store
 }
@@ -47,6 +52,16 @@ func main() {
 	flag.IntVar(&dumpInterval, "i", 0, "Dump interval in seconds (0 or less to disable)")
 	flag.IntVar(&retentionPolicy, "r", 365, "Retention policy in days (0 or less to disable)")
 	flag.Parse()
+
+	html, err := assets.ReadFile("assets/templates/index.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	static, err := fs.Sub(assets, "assets/static")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	s := &server{store: sequence.NewStore()}
 
@@ -94,8 +109,17 @@ func main() {
 		close(closed)
 	}()
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Write(html)
+	})
+
 	http.HandleFunc("/insert/", s.handlerInsert)
 	http.HandleFunc("/query/", s.handlerQuery)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
 
 	log.Printf("listening on %s", listen)
 
@@ -214,15 +238,21 @@ func (s *server) handlerQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// until better error handling
+	if _, ok := s.store.Get(key); !ok {
+		writeResponse(w, http.StatusBadRequest, statusError, "key does not exist", nil)
+		return
+	}
+
 	qs, err := s.store.Query(key, args.start, args.end, args.interval)
 	if err != nil {
-		writeResponse(w, http.StatusInternalServerError, statusError, "error executing query", nil)
+		writeResponse(w, http.StatusInternalServerError, statusError, "an unexpected error occurred", nil)
 		log.Printf("error executing query: %s", err)
 		return
 	}
 
 	message := fmt.Sprintf("%d row(s) returned (interval %ds)", len(qs.Count), int(args.interval.Seconds()))
-	writeResponse(w, http.StatusOK, statusOK, message, qs.Serialize(maskTime, time.UTC, 2, serializeFlag))
+	writeResponse(w, http.StatusOK, statusOK, message, qs.Serialize("", time.UTC, 2, serializeFlag))
 }
 
 type queryArgs struct {
@@ -232,15 +262,17 @@ type queryArgs struct {
 }
 
 func newQueryArgs(start, end string) (queryArgs, error) {
-	x, err := time.Parse(maskTime, start)
+	v, err := strconv.Atoi(start)
 	if err != nil {
 		return queryArgs{}, errors.New("error parsing start date")
 	}
+	x := time.Unix(ceilInt64(int64(v), sequenceFrequency), 0)
 
-	y, err := time.Parse(maskTime, end)
+	v, err = strconv.Atoi(end)
 	if err != nil {
 		return queryArgs{}, errors.New("error parsing end date")
 	}
+	y := time.Unix(int64(v), 0)
 
 	if x.After(y) {
 		return queryArgs{}, errors.New("range is not valid")
@@ -261,6 +293,14 @@ func newQueryArgs(start, end string) (queryArgs, error) {
 	}
 
 	return queryArgs{start: x, end: y, interval: time.Duration(aggregation) * time.Second}, nil
+}
+
+func ceilInt64(x int64, step int64) int64 {
+	r := x % step
+	if r != 0 {
+		return x + step - r
+	}
+	return x
 }
 
 func writeResponse(w http.ResponseWriter, code int, status, message string, data []byte) {

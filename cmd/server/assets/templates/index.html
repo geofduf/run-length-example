@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run-Length Example</title>
+  <link rel="stylesheet" href="/static/css/base.css">
+  <script src="/static/js/base.js"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="header-control">
+      <label for="key">Key:</label>
+      <input type="text" id="key">
+    </div>
+    <div class="header-control">
+      <label for="history">Query:</label>
+      <select id="history">
+        <option value="1h">Last 60 minutes</option>
+        <option value="6h">Last 6 hours</option>
+        <option value="1d" selected>Last 24 hours</option>
+        <option value="2d">Last 2 days</option>
+        <option value="7d">Last 7 days</option>
+        <option value="14d">Last 14 days</option>
+        <option value="30d">Last 30 days</option>
+        <option value="90d">Last 90 days</option>
+        <option value="365d">Last 365 days</option>
+        <option value="cd">Current day</option>
+        <option value="cw">Current week</option>
+        <option value="cm">Current month</option>
+        <option value="cy">Current year</option>
+        <option value="fd">Current day so far</option>
+        <option value="fw">Current week so far</option>
+        <option value="fm">Current month so far</option>
+        <option value="fy">Current year so far</option>
+        <option value="pd">Previous day</option>
+        <option value="pw">Previous week</option>
+        <option value="pm">Previous month</option>
+      </select>
+      <span id="query" class="button button-blue">Run</span>
+    </div>
+    <div class="header-control">
+      <span>Insert:</span>
+      <span id="insert-zero" class="button button-red">&nbsp;0&nbsp;</span>
+      <span id="insert-one" class="button button-green">&nbsp;1&nbsp;</span>
+    </div>
+  </div>
+  <div class="block">
+    <span class="title">Request:</span>
+    <pre id="content-request" class="content content-text content-indent"></pre>
+  </div>
+  <div class="block">
+    <span class="title">Response code:</span>
+    <span id="content-response-code" class="content content-text"></span>
+    <pre></pre>
+  </div>
+  <div class="block">
+    <span class="title">Response body (data ommitted):</span>
+    <pre id="content-response-body" class="content content-text content-indent"></pre>
+  </div>
+  <div class="block">
+    <span class="title">Rows (reverse):</span>
+    <div id="content-rows" class="content block"></div>
+  </div>
+  <script>
+    document.getElementById("history").addEventListener("change", eventHandlerQuery);
+    document.getElementById("query").addEventListener("click", eventHandlerQuery);
+    document.getElementById("insert-zero").addEventListener("click", eventHandlerInsert);
+    document.getElementById("insert-one").addEventListener("click", eventHandlerInsert);
+  </script>
+</body>
+</html>

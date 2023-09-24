@@ -1,6 +1,11 @@
-body {
+body, select {
   font-family: monospace;
   font-size: 11px;
+}
+input {
+  font-family: monospace;
+  font-size: 11px;
+  width: 80px;
 }
 tr {
   text-align: center;
@@ -8,9 +13,6 @@ tr {
 td {
   padding-left: 20px;
   padding-right: 20px;
-}
-input {
-  width: 80px;
 }
 .header {
   display: flex;

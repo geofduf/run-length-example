@@ -61,8 +61,17 @@ function queryRange(h) {
     return [start, end];
 }
 
+function pad(x) {
+  return x.toString().padStart(2, "0");
+}
+
+function dateTimeFormat(x) {
+    return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())} ` +
+      `${pad(x.getHours())}:${pad(x.getMinutes())}:${pad(x.getSeconds())}`;
+}
+
 function toUnixTime(x) {
-    return Math.floor(x.getTime()/1000);
+  return Math.floor(x.getTime()/1000);
 }
 
 function refresh(data) {
@@ -95,8 +104,8 @@ function eventHandlerQuery() {
   const content = {};
   const url = `/query/?key=${key}&start=${toUnixTime(start)}&end=${toUnixTime(end)}`;
   content["content-request"] = `Key:   ${key}\n` +
-    `Start: ${start.toLocaleString()}\n` +
-    `End:   ${end.toLocaleString()}\n` +
+    `Start: ${dateTimeFormat(start)}\n` +
+    `End:   ${dateTimeFormat(end)}\n` +
     `Raw:   GET ${url}`;
   fetch(url)
     .then(function(response) {
@@ -108,7 +117,7 @@ function eventHandlerQuery() {
         let table = "<table><thead><tr><th>Time</th><th>Count</th><th>Mean</th></tr></thead><tbody>";
         for (const row of body.data.reverse()) {
           const d = new Date(row.date*1000);
-          table += `<tr><td>${d.toLocaleString()}</td><td>${row.count}</td><td>${row.mean}</td></tr>`;
+          table += `<tr><td>${dateTimeFormat(d)}</td><td>${row.count}</td><td>${row.mean}</td></tr>`;
         }
         table += "</tbody></table>"
         content["content-rows"] = table;

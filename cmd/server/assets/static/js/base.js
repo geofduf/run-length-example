@@ -66,8 +66,8 @@ function pad(x) {
 }
 
 function dateTimeFormat(x) {
-    return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())} ` +
-      `${pad(x.getHours())}:${pad(x.getMinutes())}:${pad(x.getSeconds())}`;
+  return `${x.getFullYear()}-${pad(x.getMonth()+1)}-${pad(x.getDate())} ` +
+    `${pad(x.getHours())}:${pad(x.getMinutes())}:${pad(x.getSeconds())}`;
 }
 
 function toUnixTime(x) {

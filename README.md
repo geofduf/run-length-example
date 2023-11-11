@@ -48,7 +48,7 @@ curl -X POST --data $'k1 1 1692316800' http://127.0.0.1:8080/insert/
 
 Perform a query for a key / time range.
 
-A grouping interval will be automatically selected according to the configured maximum number of points to return.
+A grouping interval will be automatically selected according to the value of `maxNumberOfPoints`.
 
 Example:
 ```

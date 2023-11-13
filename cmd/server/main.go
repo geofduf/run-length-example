@@ -34,7 +34,7 @@ const (
 
 var (
 	aggregations   = []int64{15, 30, 60, 120, 300, 600, 900, 1200, 1800, 3600, 7200, 14400, 43200, 86400}
-	validStatement = regexp.MustCompile(`^(\w+) ([012])(?: (\d+))?$`)
+	validStatement = regexp.MustCompile(`^\w+ [012](?: \d+)?$`)
 )
 
 //go:embed assets
@@ -156,25 +156,31 @@ func (s *server) handlerInsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var statements []sequence.Statement
-	var indexMapping []int
-
 	defaultValueTimestamp := time.Now()
 	defaultSequenceTimestamp := defaultValueTimestamp.Truncate(time.Duration(sequenceFrequency) * time.Second)
-	skipped := 0
 
 	lines := bytes.Split(body, []byte("\n"))
 
-	for i, line := range lines {
-		match := validStatement.FindSubmatch(line)
-		if match == nil {
+	mapping := make([]int, len(lines))
+
+	var n int
+	for i := 0; i < len(lines); i++ {
+		if !validStatement.Match(lines[i]) {
 			log.Printf("error parsing statement %d", i+1)
-			skipped++
 			continue
 		}
+		mapping[n] = i
+		n++
+	}
+
+	statements := make([]sequence.Statement, n)
+
+	for i := 0; i < n; i++ {
+		line := lines[mapping[i]]
+		p := bytes.IndexByte(line, ' ')
 		// verbose conversion for the sake of clarity
 		var value uint8
-		switch match[2][0] {
+		switch line[p+1] {
 		case '0':
 			value = sequence.StateInactive
 		case '1':
@@ -185,43 +191,41 @@ func (s *server) handlerInsert(w http.ResponseWriter, r *http.Request) {
 			log.Panic("poor validation panic")
 		}
 		valueTimestamp, sequenceTimestamp := defaultValueTimestamp, defaultSequenceTimestamp
-		if len(match[3]) > 0 {
-			x, err := strconv.Atoi(string(match[3]))
+		if len(line) > p+2 {
+			x, err := strconv.Atoi(string(line[p+3:]))
 			if err != nil {
 				log.Panic("poor validation panic")
 			}
 			valueTimestamp = time.Unix(int64(x), 0)
 			sequenceTimestamp = valueTimestamp.Truncate(time.Duration(sequenceFrequency) * time.Second)
 		}
-		statements = append(statements, sequence.Statement{
-			Key:                 string(match[1]),
+		statements[i] = sequence.Statement{
+			Key:                 string(line[:p]),
 			Timestamp:           valueTimestamp,
 			Value:               value,
 			Type:                sequence.StatementAdd,
 			CreateIfNotExists:   true,
 			CreateWithTimestamp: sequenceTimestamp,
 			CreateWithFrequency: sequenceFrequency,
-		})
-		indexMapping = append(indexMapping, i)
+		}
 	}
 
 	result := s.store.Batch(statements)
 	if result.HasErrors() {
 		for i, err := range result.ErrorVars() {
 			if err != nil {
-				log.Printf("error executing statement %d: %s", indexMapping[i]+1, err)
-				skipped++
+				log.Printf("error executing statement %d: %s", mapping[i]+1, err)
+				n--
 			}
 		}
 	}
 
 	status := statusOK
-	if skipped > 0 {
+	if n != len(lines) {
 		status = statusWarning
 	}
 
-	n := len(lines)
-	writeResponse(w, http.StatusOK, status, fmt.Sprintf("processed %d/%d statement(s)", n-skipped, n), nil)
+	writeResponse(w, http.StatusOK, status, fmt.Sprintf("processed %d/%d statement(s)", n, len(lines)), nil)
 }
 
 func (s *server) handlerQuery(w http.ResponseWriter, r *http.Request) {
